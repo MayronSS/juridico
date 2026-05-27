@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+  <!-- Ícone da balança -->
+  <g transform="translate(8, 8)">
+    <!-- Pilar central -->
+    <rect x="20" y="8" width="2.5" height="32" rx="1" fill="#1a2332"/>
+    <!-- Base -->
+    <rect x="12" y="38" width="18" height="3" rx="1.5" fill="#1a2332"/>
+    <!-- Barra horizontal -->
+    <rect x="4" y="8" width="34" height="2.5" rx="1" fill="#1a2332"/>
+    <!-- Prato esquerdo -->
+    <path d="M4 10.5 L0 22 Q0 25 4 25 L12 25 Q16 25 16 22 L12 10.5" stroke="#b8953e" stroke-width="1.5" fill="none"/>
+    <!-- Prato direito -->
+    <path d="M30 10.5 L26 22 Q26 25 30 25 L38 25 Q42 25 42 22 L38 10.5" stroke="#b8953e" stroke-width="1.5" fill="none"/>
+  </g>
+  <!-- Texto do nome -->
+  <text x="62" y="28" font-family="Georgia, 'Times New Roman', serif" font-size="16" font-weight="700" fill="#1a2332" letter-spacing="0.5">
+    Advocacia &amp;
+  </text>
+  <text x="62" y="46" font-family="Georgia, 'Times New Roman', serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="2.5">
+    CONSULTORIA
+  </text>
+  <!-- Linha decorativa dourada -->
+  <rect x="62" y="50" width="40" height="1.5" rx="0.75" fill="#b8953e"/>
+</svg>

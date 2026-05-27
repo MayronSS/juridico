@@ -1,0 +1,29 @@
+# ============================================
+# PostgreSQL local para desenvolvimento
+# ============================================
+# Rodar: docker compose up -d
+# Parar: docker compose down
+# Resetar dados: docker compose down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: juridico-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: juridico
+      POSTGRES_PASSWORD: juridico123
+      POSTGRES_DB: site_juridico
+    volumes:
+      - juridico_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U juridico -d site_juridico"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  juridico_pgdata:
+    driver: local

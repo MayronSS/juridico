@@ -1,0 +1,192 @@
+// ============================================
+// Site Jurídico — Prisma Schema (v7)
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// Enums
+// ============================================
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  USER
+}
+
+enum LeadStatus {
+  NOVO
+  EM_ANALISE
+  RESPONDIDO
+  ARQUIVADO
+}
+
+enum PostStatus {
+  RASCUNHO
+  PUBLICADO
+}
+
+// ============================================
+// Models
+// ============================================
+
+model User {
+  id                 String    @id @default(cuid())
+  clerkId            String?   @unique // Clerk user ID
+  name               String
+  email              String    @unique
+  passwordHash       String    @default("clerk-managed")
+  role               UserRole  @default(EDITOR)
+  passwordChangedAt  DateTime?
+  mustChangePassword Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  posts        Post[]
+  leadHistory  LeadHistory[]
+
+  @@map("users")
+}
+
+model Lead {
+  id              String     @id @default(cuid())
+  name            String
+  email           String
+  phone           String
+  personType      String     // "FISICA" ou "JURIDICA"
+  city            String?
+  state           String?
+  legalArea       String
+  message         String     @db.Text
+  status          LeadStatus @default(NOVO)
+  lgpdAccepted    Boolean    @default(false)
+  lgpdAcceptedAt  DateTime?
+  ipAddress       String?
+  userAgent       String?
+  internalNotes   String?    @db.Text
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  history         LeadHistory[]
+
+  @@index([status])
+  @@index([legalArea])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+model LeadHistory {
+  id        String      @id @default(cuid())
+  leadId    String
+  action    String      // "STATUS_CHANGE", "NOTE_ADDED", "CREATED", etc.
+  oldStatus LeadStatus?
+  newStatus LeadStatus?
+  note      String?     @db.Text
+  userId    String?
+  createdAt DateTime    @default(now())
+
+  lead      Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@map("lead_history")
+}
+
+model Post {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  excerpt         String?    @db.Text
+  content         String     @db.Text
+  coverImage      String?
+  categoryId      String?
+  authorId        String
+  status          PostStatus @default(RASCUNHO)
+  metaTitle       String?
+  metaDescription String?
+  publishedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  category        Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  author          User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([slug])
+  @@index([status])
+  @@index([categoryId])
+  @@index([publishedAt])
+  @@map("posts")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts       Post[]
+
+  @@map("categories")
+}
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  type        String   @default("text")
+  group       String   @default("general")
+  label       String   @default("")
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ============================================
+// Security & Audit Models
+// ============================================
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String   // Ex: "LOGIN_SUCCESS", "LEAD_STATUS_CHANGED"
+  resourceType String   // Ex: "lead", "article", "user", "auth"
+  resourceId   String?
+  actorUserId  String?
+  ipHash       String?  // Hash do IP — LGPD
+  userAgent    String?
+  metadata     Json?    // Dados extras (sem dados sensíveis)
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId])
+  @@index([resourceType, resourceId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model ApiAccessLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  method     String   // GET, POST, PUT, PATCH, DELETE
+  path       String   // /api/contato, /api/leads/xxx
+  statusCode Int
+  ipHash     String?
+  userAgent  String?
+  requestId  String?
+  createdAt  DateTime @default(now())
+
+  @@index([path])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("api_access_logs")
+}

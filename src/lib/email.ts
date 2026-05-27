@@ -6,6 +6,7 @@ import { Resend } from "resend";
 import { sanitizeString } from "@/lib/utils";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const SENDER_EMAIL = process.env.SENDER_EMAIL || "onboarding@resend.dev";
 
 interface ContactEmailData {
   name: string;
@@ -55,7 +56,7 @@ export async function sendContactNotification(
 
   try {
     await resend.emails.send({
-      from: "Site Jurídico <noreply@seudominio.com.br>",
+      from: `Site Jurídico <${SENDER_EMAIL}>`,
       to: [contactEmail],
       subject: `Novo contato via site — ${safe.legalArea}`,
       html: `
@@ -143,7 +144,7 @@ export async function sendContactConfirmation(
 
   try {
     await resend.emails.send({
-      from: `${siteName} <noreply@seudominio.com.br>`,
+      from: `${siteName} <${SENDER_EMAIL}>`,
       to: [toEmail],
       subject: `Recebemos sua mensagem — ${siteName}`,
       html: `

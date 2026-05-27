@@ -38,32 +38,60 @@ export async function auth() {
     const clerkUser = await currentUser();
     if (!clerkUser) return null;
 
-    // Verifica se já existe algum usuário no banco
-    const userCount = await prisma.user.count();
-    const role: UserRole = userCount === 0 ? "ADMIN" : "USER";
+    const email = clerkUser.emailAddresses[0]?.emailAddress || "";
 
-    const newUser = await prisma.user.create({
-      data: {
-        clerkId: userId,
-        name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Usuário",
-        email: clerkUser.emailAddresses[0]?.emailAddress || "",
-        passwordHash: "clerk-managed", // Clerk gerencia senhas
-        role, // Atribui ADMIN se for o primeiro, senão USER
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-      },
-    });
+    // Verifica se já existe um usuário com o mesmo e-mail (ex: pré-cadastrado no seed)
+    const existingUserByEmail = email
+      ? await prisma.user.findUnique({
+          where: { email },
+        })
+      : null;
+
+    let finalUser;
+
+    if (existingUserByEmail) {
+      // Atualiza o usuário existente definindo o clerkId dele
+      finalUser = await prisma.user.update({
+        where: { id: existingUserByEmail.id },
+        data: {
+          clerkId: userId,
+          name: existingUserByEmail.name || `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Usuário",
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      });
+    } else {
+      // Verifica se já existe algum usuário no banco
+      const userCount = await prisma.user.count();
+      const role: UserRole = userCount === 0 ? ("ADMIN" as UserRole) : ("USER" as UserRole);
+
+      finalUser = await prisma.user.create({
+        data: {
+          clerkId: userId,
+          name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Usuário",
+          email,
+          passwordHash: "clerk-managed", // Clerk gerencia senhas
+          role, // Atribui ADMIN se for o primeiro, senão USER
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      });
+    }
 
     return {
       user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
+        id: finalUser.id,
+        name: finalUser.name,
+        email: finalUser.email,
+        role: finalUser.role,
       },
     };
   }

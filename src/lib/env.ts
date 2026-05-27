@@ -16,13 +16,8 @@ const serverEnvSchema = z.object({
     .min(1, "DATABASE_URL é obrigatória"),
 
   // --- Auth ---
-  AUTH_SECRET: z
-    .string()
-    .min(1, "AUTH_SECRET é obrigatória")
-    .default(""),
-  NEXTAUTH_SECRET: z
-    .string()
-    .min(1, "NEXTAUTH_SECRET é obrigatória"),
+  AUTH_SECRET: z.string().optional(),
+  NEXTAUTH_SECRET: z.string().optional(),
   NEXTAUTH_URL: z
     .string()
     .url("NEXTAUTH_URL deve ser uma URL válida")

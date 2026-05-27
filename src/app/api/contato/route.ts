@@ -79,32 +79,40 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 5. Enviar e-mails (não bloqueia a resposta em caso de falha)
-    const emailPromises = [
-      sendContactNotification({
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        personType: data.personType,
-        city: data.city || undefined,
-        state: data.state || undefined,
-        legalArea: data.legalArea,
-        message: data.message,
-      }),
-      sendContactConfirmation(data.email, data.name),
-    ];
-
-    // Executa em background — não falha a request se e-mail falhar
-    Promise.allSettled(emailPromises).then((results) => {
-      results.forEach((result, index) => {
-        if (result.status === "rejected") {
-          console.error(
-            `❌ Erro no e-mail ${index === 0 ? "notificação" : "confirmação"}:`,
-            result.reason
-          );
-        }
+    // 5. Enviar e-mails (espera a conclusão para evitar congelamento no serverless da Vercel)
+    try {
+      await Promise.allSettled([
+        sendContactNotification({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          personType: data.personType,
+          city: data.city || undefined,
+          state: data.state || undefined,
+          legalArea: data.legalArea,
+          message: data.message,
+        }),
+        sendContactConfirmation(data.email, data.name),
+      ]).then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === "rejected") {
+            console.error(
+              `❌ Erro no e-mail ${index === 0 ? "notificação" : "confirmação"}:`,
+              result.reason
+            );
+          } else if (result.value && !result.value.success) {
+            console.error(
+              `❌ Falha no envio do e-mail ${index === 0 ? "notificação" : "confirmação"}:`,
+              result.value.error
+            );
+          } else {
+            console.log(`✅ E-mail ${index === 0 ? "notificação" : "confirmação"} disparado com sucesso.`);
+          }
+        });
       });
-    });
+    } catch (e) {
+      console.error("❌ Erro ao enviar e-mails:", e);
+    }
 
     return NextResponse.json(
       {
